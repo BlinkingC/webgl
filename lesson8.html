@@ -1,0 +1,187 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body onload="start()">
+    <canvas id="lesson1" class="content"></canvas>
+  </body>
+</html>
+<script id="shader-vs">
+  precision lowp float;
+  attribute vec4 v3Position;
+  uniform float anim;
+  void main(void){
+    gl_Position = vec4(v3Position.x+anim,v3Position.y,v3Position.z,1.0);
+  }
+</script>
+<script id="shader-fs">
+  precision lowp float;
+  uniform vec4 inColor;
+  void main(void){
+    gl_FragColor = inColor;
+  }
+</script>
+<script>
+  var webgl = null;
+  //创建顶点着色器和片段着色器对象
+  var vertexShaderObject = null;
+  var fragmentShaderObject = null;
+  //创建程序都西昂
+  var programObject = null;
+  //创建三角形对象缓冲区
+  var triangleBuffer = null;
+  var indexBuffer = null;
+  //创建顶点索引
+  var v3PositionIndex = 0;
+  var v3Position = 0;
+  //源代码
+  var vertexSourceCode = null;
+  var fragmentSourceCode = null;
+  var uniformColor = 0;
+  var uniformAnim = 0;
+  var animTime = 0;
+
+  function init() {
+    debugger;
+    var canvas = document.getElementById("lesson1");
+    webgl = canvas.getContext("webgl");
+    //webgl.viewport(0, 0, webgl.viewportWidth, webgl.viewportHeight);
+    //创建着色器
+    vertexShaderObject = webgl.createShader(webgl.VERTEX_SHADER);
+    fragmentShaderObject = webgl.createShader(webgl.FRAGMENT_SHADER);
+    //获取源代码
+    vertexSourceCode = getShaderSource("shader-vs");
+    fragmentSourceCode = getShaderSource("shader-fs");
+    //向着色器对象填充源代码
+    webgl.shaderSource(vertexShaderObject, vertexSourceCode);
+    webgl.shaderSource(fragmentShaderObject, fragmentSourceCode);
+    //编译着色器
+    webgl.compileShader(vertexShaderObject);
+    webgl.compileShader(fragmentShaderObject);
+
+    if (!webgl.getShaderParameter(vertexShaderObject, webgl.COMPILE_STATUS)) {
+      alert("error vertexShaderObject");
+      return;
+    }
+    if (!webgl.getShaderParameter(fragmentShaderObject, webgl.COMPILE_STATUS)) {
+      alert("error fragmentShaderObject");
+      return;
+    }
+    //创建应用程序
+    programObject = webgl.createProgram();
+    //为应用程序分配着色器
+    webgl.attachShader(programObject, vertexShaderObject);
+    webgl.attachShader(programObject, fragmentShaderObject);
+
+    //链接程序
+    webgl.linkProgram(programObject);
+    if (!webgl.getProgramParameter(programObject, webgl.LINK_STATUS)) {
+      alert("error:link");
+    }
+    //使用程序
+    webgl.useProgram(programObject);
+    var triangleData = [
+         -0.5, 0.5,1.0,
+          0.5, 0.5,1.0,
+         -0.5, -0.5, 1.0,
+
+          0.5, -0.5, 1.0,
+          0.5, 0.5,1.0,
+         -0.5, -0.5, 1.0,
+
+          0.5, 0.5,1.0,
+          0.5, -0.5, 1.0,
+          1.0, 0.5, 1.0
+      ];
+    //创建缓冲区对象
+    triangleBuffer = webgl.createBuffer();
+    if (!triangleBuffer) {
+      alert("error:triangleBuffer");
+    }
+    webgl.bindBuffer(webgl.ARRAY_BUFFER, triangleBuffer);
+    //指定缓冲区对象类型
+    webgl.bufferData(
+      webgl.ARRAY_BUFFER,
+      new Float32Array(triangleData),
+      webgl.STATIC_DRAW
+    );
+    var indexTriangleData = [
+          0,1,2,
+          1,2,3,
+          2,3,4
+      ];
+    indexBuffer  = webgl.createBuffer();
+    if(!indexBuffer){
+      alert("error:indexBuffer");
+    }
+    webgl.bindBuffer(webgl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+    webgl.bufferData(
+      webgl.ELEMENT_ARRAY_BUFFER,
+      new Uint16Array(indexTriangleData),
+      webgl.STATIC_DRAW
+    );
+    v3Position = webgl.getAttribLocation(programObject, "v3Position");
+    uniformColor = webgl.getUniformLocation(programObject,"inColor");
+    uniformAnim =  webgl.getUniformLocation(programObject,"anim");
+    webgl.uniform4f(uniformColor,1,1,0,1);
+    if (v3Position < 0) {
+      console.log("Failed to get the storage location of a_Position");
+      return;
+    };
+  }
+
+  function render(){
+    webgl.clearColor(0.0, 0.0, 0.2, 1.0);
+    webgl.clear(webgl.COLOR_BUFFER_BIT);
+    webgl.bindBuffer(webgl.ARRAY_BUFFER, triangleBuffer);
+    webgl.bindBuffer(webgl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+    animTime +=0.01;
+    webgl.useProgram(programObject);
+    webgl.uniform1f(uniformAnim,animTime);
+    webgl.enableVertexAttribArray(v3Position);
+    webgl.vertexAttribPointer(v3Position, 3, webgl.FLOAT, false, 0, 0);
+    webgl.drawElements(webgl.TRIANGLES,6,webgl.UNSIGNED_SHORT,0)
+  }
+  function getShaderSource(id) {
+    var shaderScript = document.getElementById(id);
+    if (shaderScript === null) {
+      return "";
+    }
+    var sourceCode = "";
+
+    var child = shaderScript.firstChild;
+
+    while (child) {
+      if (child.nodeType === child.TEXT_NODE) {
+        sourceCode += child.textContent;
+        child = child.nextSibling;
+      }
+    }
+    return sourceCode;
+  }
+  function start(){
+    init();
+    tick();
+
+  }
+  function tick(){
+    debugger
+    window.requestAnimationFrame(tick);
+    render();
+  }
+  // window.requestAnimationFrame= (function(){
+  //   return window.requestAnimationFrame ||window.webkitRequestAnimationFrame|| function(callback,element){
+  //      window.setTimeout(callback,1000/60);
+  //   }
+  // })
+</script>
+<style>
+  .content {
+    width: 500px;
+    height: 500px;
+    border: 1px solid salmon;
+  }
+</style>

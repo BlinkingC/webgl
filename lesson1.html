@@ -1,0 +1,28 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body onload="init()">
+    <canvas id="lesson1" class="content"></canvas>
+  </body>
+</html>
+<script>
+  var webgl = null;
+  function init() {
+    var canvas = document.getElementById("lesson1");
+    webgl = canvas.getContext("webgl");
+    webgl.viewport(1200, 1200, canvas.clientWidth, canvas.clientHeight);
+    webgl.clearColor(0.0, 1.0, 1.0, 1.0);
+    webgl.clear(webgl.COLOR_BUFFER_BIT);
+  }
+</script>
+<style>
+  .content {
+    width: 800px;
+    height: 600px;
+    border: 1px solid salmon;
+  }
+</style>
